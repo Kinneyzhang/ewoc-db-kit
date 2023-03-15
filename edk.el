@@ -10,3 +10,5 @@
 (defvar edk-app-views
   '("daily view" summary type "daily")
   )
+
+(provide 'edk)

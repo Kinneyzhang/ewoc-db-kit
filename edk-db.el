@@ -2,13 +2,7 @@
 (require 'emacsql-sqlite)
 
 (defvar edk-db-file nil)
-(defvar edk-db-tables
-  '((summary
-     [(id :primary-key)
-      (type :not-null)
-      (content :not-null)
-      (summary_time :not-null)
-      (create_time :not-null)])))
+(defvar edk-db-tables nil)
 
 (defun edk-db--get-conn ()
   "Return the edk database connection with key PATH."
