@@ -4,4 +4,3 @@
   "")
 
 (provide 'edk-ewoc)
-
