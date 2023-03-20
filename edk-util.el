@@ -57,6 +57,9 @@ Converting to a symbol means dropping the :."
                      (cdr cons)))
              alist))))
 
+(defun edk--format-fields (fields)
+  (if (consp fields) (edk-list->vector fields) fields))
+
 (defun edk-error-keywords-missing (&rest keywords)
   (let* ((keys-lst (mapcar #'symbol-name keywords))
          (join-str (string-join keys-lst "/")))

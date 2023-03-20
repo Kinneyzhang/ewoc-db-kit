@@ -59,8 +59,6 @@ SQL can be either the emacsql vector representation, or a string."
       (emacsql (edk-db) (apply #'format sql args))
     (apply #'emacsql (edk-db) sql args)))
 
-;;; Outside API
-
 (defun edk-model-fields (model)
   "Result example: \"'(id type content summary_time create_time)\"."
   (when edk-db-models
@@ -81,6 +79,8 @@ Result examples:
     (cond
      ((keywordp head) (edk-entry-field-values data fields))
      ((consp head) (edk-entries-field-vals data fields)))))
+
+;;; Model API
 
 (defun edk-model-count (&rest plist)
   (if-let ((model (plist-get plist :model)))
@@ -109,7 +109,6 @@ Result examples:
         count)
     (edk-error-keywords-missing :model)))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defun edk-model-update (&rest plist)
   (if-let* ((model (plist-get plist :model))
             (values (plist-get plist :values))
@@ -125,48 +124,53 @@ Result examples:
         count)
     (edk-error-keywords-missing :model :values)))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(defun edk-model-query (&rest plist)
+  (if-let ((model (plist-get plist :model))
+           (fields '*))
+      (progn (setq fields (or (edk--format-fields
+                               (plist-get plist :fields))
+                              fields))
+             (if-let ((conds (plist-get plist :conds)))
+                 (edk-db-crud `[:select ,fields :from ,model :where ,conds])
+               (edk-db-crud `[:select ,fields :from ,model])))
+    (edk-error-keywords-missing :model)))
 
-(defun edk-model-query (model fields &optional cond)
-  (let ((fields (if (consp fields)
-                    (edk-list->vector fields)
-                  fields)))
-    (if cond
-        (edk-db-crud `[:select ,fields :from ,model :where ,cond])
-      (edk-db-crud `[:select ,fields :from ,model]))))
-
-(defun edk-model-crud (sql &rest args)
-  (edk-db-crud sql args))
-
-;;; model api
-
-(defun edk-model-count (&rest plist)
-  (when-let ((model (plist-get plist :model)))
-    (edk-model-count model (plist-get plist :conds))))
+(defun edk-model-crud (&rest plist)
+  (if-let ((sql (plist-get plist :sql)))
+      (if-let ((args (plist-get plist :args)))
+          (edk-db-crud sql args)
+        (edk-db-crud sql))
+    (edk-error-keywords-missing :sql)))
 
 (defun edk-model-all (&rest plist)
-  (when-let ((model (plist-get plist :model)))
-    (edk-model-query model '*)))
+  (if-let ((model (plist-get plist :model)))
+      (edk-model-query :model model :fields '*)
+    (edk-error-keywords-missing :model)))
 
 (defun edk-model-filter (&rest plist)
-  (when-let ((model (plist-get plist :model)))
-    (edk-model-query model '* (plist-get plist :conds))))
+  (if-let ((model (plist-get plist :model))
+           (conds (plist-get plist :conds)))
+      (edk-model-query :model model :fields '* :conds conds)
+    (edk-error-keywords-missing :model :conds)))
 
 (defun edk-model-get (&rest plist)
-  (when-let ((model (plist-get plist :model)))
-    (let* ((conds (plist-get plist :conds))
-           (data (edk-model-query model '* conds)))
-      (when (= (length data) 1)
-        (car data)))))
+  (if-let ((model (plist-get plist :model))
+           (conds (plist-get plist :conds)))
+      (let ((data (edk-model-query :model model :fields '*
+                                   :conds conds)))
+        (when (= (length data) 1)
+          (car data)))
+    (edk-error-keywords-missing :model :conds)))
 
 (defun edk-model-exclude (&rest plist)
-  (when-let ((model (plist-get plist :model))
-             (conds (plist-get plist :conds)))
-    (edk-model-query model '* (append '(not) (list conds)))))
+  (if-let ((model (plist-get plist :model))
+           (conds (plist-get plist :conds)))
+      (edk-model-query :model model :fields '*
+                       :conds (append '(not) (list conds)))
+    (edk-error-keywords-missing :model :conds)))
 
 ;;; 基于外键的高级查询等
 ;; ........
-
 
 
 (provide 'edk-db)
