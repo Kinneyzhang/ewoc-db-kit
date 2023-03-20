@@ -82,7 +82,7 @@ Result examples:
      ((keywordp head) (edk-entry-field-values data fields))
      ((consp head) (edk-entries-field-vals data fields)))))
 
-(defun edk-model-count (model &optional cond)
+(defun edk-model--count (model &optional cond)
   (if cond
       (caar (edk-db-crud `[:select (funcall count 1) :from ,model :where ,cond]))
     (caar (edk-db-crud `[:select (funcall count 1) :from ,model]))))
@@ -92,7 +92,7 @@ Result examples:
     (edk-db-crud `[:insert :into ,model :values ,data])))
 
 (defun edk-model-delete (model &optional cond)
-  (let ((count (edk-model-count model cond)))
+  (let ((count (edk-model--count model cond)))
     (if cond
         (edk-db-crud `[:delete :from ,model :where ,cond])
       (edk-db-crud `[:delete :from ,model]))
@@ -100,7 +100,7 @@ Result examples:
 
 (defun edk-model-update (model list &optional cond)
   (let ((exp (edk--update-setexp list))
-        (count (edk-model-count model cond)))
+        (count (edk-model--count model cond)))
     (if cond
         (edk-db-crud `[:update ,model :set ,exp :where ,cond])
       (edk-db-crud `[:update ,model :set ,exp]))
@@ -119,21 +119,33 @@ Result examples:
 
 ;;; model api
 
-(defun edk-model-all (model)
-  (edk-model-query model '*))
+(defun edk-model-count (&rest plist)
+  (when-let ((model (plist-get plist :model)))
+    (edk-model--count model (plist-get plist :conds))))
 
-(defun edk-model-filter (model conds)
-  (edk-model-query model '* conds))
+(defun edk-model-all (&rest plist)
+  (when-let ((model (plist-get plist :model)))
+    (edk-model-query model '*)))
 
-(defun edk-model-get (model conds)
-  (when-let ((data (edk-model-query model '* conds)))
-    (when (= (length data) 1)
-      (car data))))
+(defun edk-model-filter (&rest plist)
+  (when-let ((model (plist-get plist :model)))
+    (edk-model-query model '* (plist-get plist :conds))))
 
-(defun edk-model-exclude (model conds)
-  (edk-model-query model '* (append '(not) (list conds))))
+(defun edk-model-get (&rest plist)
+  (when-let ((model (plist-get plist :model)))
+    (let* ((conds (plist-get plist :conds))
+           (data (edk-model-query model '* conds)))
+      (when (= (length data) 1)
+        (car data)))))
+
+(defun edk-model-exclude (&rest plist)
+  (when-let ((model (plist-get plist :model))
+             (conds (plist-get plist :conds)))
+    (edk-model-query model '* (append '(not) (list conds)))))
 
 ;;; 基于外键的高级查询等
 ;; ........
+
+
 
 (provide 'edk-db)
