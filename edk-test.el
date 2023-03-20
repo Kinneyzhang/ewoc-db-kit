@@ -44,7 +44,7 @@
  'summary '((type "monthly") (content "content234"))
  '(= content "content111"))
 
-(edk-model-count 'summary '(= type "daily"))
+(edk-model--count 'summary '(= type "daily"))
 
 (edk-model-query 'summary '*
                  '(= content "content333"))
@@ -61,29 +61,27 @@
 
 ;;; TODO: modify the parameter of api to kvs
 
-(edk-model-count 'summary '(and (= type "monthly")
-                                (= content "content234")))
+(edk-model-all
+ :model 'summary
+ :order-by nil)
+
 (edk-model-count
- :model summary
- :conds (and (= type "monthly")
-             (= content "content234")))
+ :model 'summary
+ :conds '(and (= type "monthly")
+              (= content "content234")))
 
-
-(edk-model-filter 'summary '(and (= type "daily")
-                                 (= content "contentaaa")))
 (edk-model-filter
- :model summary
- :conds (and (= type "daily")
-              (= content "contentaaa")))
+ :model 'summary
+ :conds '(and (= type "daily")
+              (= content "contentaaa"))
+ :order-by nil)
 
-(edk-model-get 'summary '(and (= type "daily")
-                              (= content "contentaaa")))
 (edk-model-get
- :model summary
- :conds (and (= type "daily")
+ :model 'summary
+ :conds '(and (= type "daily")
               (= content "contentaaa")))
 
-(edk-model-exclude 'summary '(= type "daily"))
 (edk-model-exclude
- :model summary
- :conds (= type "daily"))
+ :model 'summary
+ :conds '(= type "daily")
+ :order-by nil)
