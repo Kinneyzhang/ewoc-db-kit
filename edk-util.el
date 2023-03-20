@@ -39,8 +39,25 @@ Converting to a symbol means dropping the :."
             (edk-entry-field-values plist fields))
           plists))
 
-(defun edk--update-setexp (list)
-  (edk-list->vector
-   (mapcar (lambda (pair)
-             (append '(=) pair))
-           list)))
+(defun plist->alist (plist)
+  "Convert a plist to a alist."
+  (if (null plist)
+      '()
+    (cons
+     (cons (car plist) (cadr plist))
+     (plist->alist (cddr plist)))))
+
+(defun edk--format-setexp (plist)
+  ;; '(:type "monthly" :content "content234")
+  ;; [(= type "monthly") (= content "content234")]
+  (let ((alist (plist->alist plist)))
+    (edk-list->vector
+     (mapcar (lambda (cons)
+               (list '= (edk-k->symbol (car cons))
+                     (cdr cons)))
+             alist))))
+
+(defun edk-error-keywords-missing (&rest keywords)
+  (let* ((keys-lst (mapcar #'symbol-name keywords))
+         (join-str (string-join keys-lst "/")))
+    (error "Missing keyword(s) %s when calling model functions." join-str)))

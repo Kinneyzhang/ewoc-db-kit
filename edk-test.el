@@ -8,43 +8,55 @@
                   (create_time :not-null)])))
 
 ;; '(id type content summary_time create_time)
-
-(edk-db-crud [:select * :from summary])
+(edk-model-all :model 'summary)
+(edk-model-delete :model 'summary)
+(edk-model-filter :model 'summary
+                  :conds '(= content "content111"))
+(edk-model-insert
+ :model 'summary
+ :values `( :content "content111"
+            :type "daily" :id ,(edk-uuid)
+            :summary_time "2023-03-19"
+            :create_time ,(edk-second)))
 
 (edk-model-insert
- 'summary
- `(( :content "content111"
-     :type "daily" :id ,(edk-uuid)
-     :summary_time "2023-03-19"
-     :create_time ,(edk-second))
-   ( :id ,(edk-uuid)
-     :content "content222"
-     :type "daily"
-     :summary_time "2023-03-19"
-     :create_time ,(edk-second))
-   ( :content "content333"
-     :type "daily" :id ,(edk-uuid)
-     :summary_time "2023-03-19"
-     :create_time ,(edk-second))
-   ( :content "content444"
-     :type "daily" :id ,(edk-uuid)
-     :summary_time "2023-03-19"
-     :create_time ,(edk-second))))
-
-(edk-model-insert
- 'summary
- `( :content "contentaaa"
-    :type "daily" :id ,(edk-uuid)
-    :summary_time "2023-03-19"
-    :create_time ,(edk-second)))
-
-(edk-model-delete 'summary)
+ :model 'summary
+ :values `(( :content "content111"
+             :type "daily" :id ,(edk-uuid)
+             :summary_time "2023-03-19"
+             :create_time ,(edk-second))
+           ( :id ,(edk-uuid)
+             :content "content222"
+             :type "daily"
+             :summary_time "2023-03-19"
+             :create_time ,(edk-second))
+           ( :content "content333"
+             :type "daily" :id ,(edk-uuid)
+             :summary_time "2023-03-19"
+             :create_time ,(edk-second))
+           ( :content "content444"
+             :type "daily" :id ,(edk-uuid)
+             :summary_time "2023-03-20"
+             :create_time ,(edk-second))
+           ( :content "content555"
+             :type "daily" :id ,(edk-uuid)
+             :summary_time "2023-03-20"
+             :create_time ,(edk-second))
+           ( :content "content666"
+             :type "daily" :id ,(edk-uuid)
+             :summary_time "2023-03-20"
+             :create_time ,(edk-second))))
 
 (edk-model-update
  'summary '((type "monthly") (content "content234"))
  '(= content "content111"))
 
-(edk-model--count 'summary '(= type "daily"))
+(edk-model-all :model 'summary)
+(edk-model-update
+ :model 'summary
+ :values '(:type "monthly" :content "content222")
+ ;; :conds '(= type "daily")
+ )
 
 (edk-model-query 'summary '*
                  '(= content "content333"))
@@ -67,8 +79,7 @@
 
 (edk-model-count
  :model 'summary
- :conds '(and (= type "monthly")
-              (= content "content234")))
+ :conds '(= type "daily"))
 
 (edk-model-filter
  :model 'summary

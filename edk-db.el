@@ -82,29 +82,50 @@ Result examples:
      ((keywordp head) (edk-entry-field-values data fields))
      ((consp head) (edk-entries-field-vals data fields)))))
 
-(defun edk-model--count (model &optional cond)
-  (if cond
-      (caar (edk-db-crud `[:select (funcall count 1) :from ,model :where ,cond]))
-    (caar (edk-db-crud `[:select (funcall count 1) :from ,model]))))
+(defun edk-model-count (&rest plist)
+  (if-let ((model (plist-get plist :model)))
+      (if-let ((conds (plist-get plist :conds)))
+          (caar (edk-db-crud `[:select (funcall count 1) :from ,model :where ,conds]))
+        (caar (edk-db-crud `[:select (funcall count 1) :from ,model])))
+    (edk-error-keywords-missing :model)))
 
-(defun edk-model-insert (model data)
-  (let ((data (edk-model-values model data)))
-    (edk-db-crud `[:insert :into ,model :values ,data])))
+(defun edk-model-insert (&rest plist)
+  (if-let* ((model (plist-get plist :model))
+            (values (plist-get plist :values))
+            (data (edk-model-values model values)))
+      (edk-db-crud `[:insert :into ,model :values ,data])
+    (edk-error-keywords-missing :model :values)))
 
-(defun edk-model-delete (model &optional cond)
-  (let ((count (edk-model--count model cond)))
-    (if cond
-        (edk-db-crud `[:delete :from ,model :where ,cond])
-      (edk-db-crud `[:delete :from ,model]))
-    count))
+(defun edk-model-delete (&rest plist)
+  (if-let ((model (plist-get plist :model))
+           (count 0))
+      (progn
+        (if-let* ((conds (plist-get plist :conds)))
+            (progn
+              (setq count (edk-model-count :model model :conds conds))
+              (edk-db-crud `[:delete :from ,model :where ,conds]))
+          (setq count (edk-model-count :model model))
+          (edk-db-crud `[:delete :from ,model]))
+        count)
+    (edk-error-keywords-missing :model)))
 
-(defun edk-model-update (model list &optional cond)
-  (let ((exp (edk--update-setexp list))
-        (count (edk-model--count model cond)))
-    (if cond
-        (edk-db-crud `[:update ,model :set ,exp :where ,cond])
-      (edk-db-crud `[:update ,model :set ,exp]))
-    count))
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(defun edk-model-update (&rest plist)
+  (if-let* ((model (plist-get plist :model))
+            (values (plist-get plist :values))
+            (values-exp (edk--format-setexp values))
+            (count 0))
+      (progn
+        (if-let ((conds (plist-get plist :conds)))
+            (progn
+              (setq count (edk-model-count :model model :conds conds))
+              (edk-db-crud `[:update ,model :set ,values-exp :where ,conds]))
+          (setq count (edk-model-count :model model))
+          (edk-db-crud `[:update ,model :set ,values-exp]))
+        count)
+    (edk-error-keywords-missing :model :values)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defun edk-model-query (model fields &optional cond)
   (let ((fields (if (consp fields)
@@ -121,7 +142,7 @@ Result examples:
 
 (defun edk-model-count (&rest plist)
   (when-let ((model (plist-get plist :model)))
-    (edk-model--count model (plist-get plist :conds))))
+    (edk-model-count model (plist-get plist :conds))))
 
 (defun edk-model-all (&rest plist)
   (when-let ((model (plist-get plist :model)))
